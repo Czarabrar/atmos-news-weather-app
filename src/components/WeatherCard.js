@@ -1,18 +1,25 @@
-import React from 'react';
+import React, { useContext, useEffect, useRef } from 'react';
 import {
   View,
   Text,
-  FlatList,
   StyleSheet,
   Dimensions,
   ScrollView,
+  Animated,
+  FlatList,
 } from 'react-native';
 import moment from 'moment';
 import LottieView from 'lottie-react-native';
-import Icon from 'react-native-vector-icons/EvilIcons';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { AppContext } from '../context/AppContext';
+import { glass, typography, spacing } from '../utils/theme';
 
-const {width} = Dimensions.get('window');
+import ClearSvg from '../assets/images/clouds-sun-svgrepo-com.svg';
+import CloudySvg from '../assets/images/clouds-cloud-svgrepo-com.svg';
+import RainSvg from '../assets/images/clouds-strom-2-svgrepo-com.svg';
+import MoonSvg from '../assets/images/clouds-moon-svgrepo-com.svg';
+
+const { width } = Dimensions.get('window');
 
 const weatherAnimations = {
   Clear: require('../../Assets/gifs/clear.json.json'),
@@ -32,7 +39,47 @@ const weatherAnimations = {
   Tornado: require('../../Assets/gifs/rainy.json.json'),
 };
 
-export default function WeatherCard({weather, forecast, unit}) {
+export default function WeatherCard({ weather, forecast, unit }) {
+  const { setWeatherCondition, setIconCode } = useContext(AppContext);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const floatAnim = useRef(new Animated.Value(0)).current;
+
+  const currentCondition = weather.weather[0].main;
+  const currentIcon = weather.weather[0].icon;
+  const animationSource =
+    weatherAnimations[currentCondition] || weatherAnimations.Clear;
+
+  useEffect(() => {
+    setWeatherCondition(currentCondition);
+    setIconCode(currentIcon);
+  }, [currentCondition, currentIcon]);
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, {
+          toValue: -6,
+          duration: 2500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatAnim, {
+          toValue: 0,
+          duration: 2500,
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start();
+  }, []);
+
+  // Build daily forecast
   const groupedForecast = forecast.reduce((acc, item) => {
     const date = moment(item.dt_txt).format('YYYY-MM-DD');
     if (!acc[date]) acc[date] = [];
@@ -45,219 +92,235 @@ export default function WeatherCard({weather, forecast, unit}) {
       const temps = items.map(i => i.main.temp);
       const avgTemp = (
         temps.reduce((sum, t) => sum + t, 0) / temps.length
-      ).toFixed(1);
+      ).toFixed(0);
       const condition = items[0].weather[0].main;
-      return {date, avgTemp, condition};
+      return { date, avgTemp, condition };
     },
   );
 
-  // const currentCondition = weather.weather[0].main;
-  const currentCondition = 'cool';
-  const animationSource =
-    weatherAnimations[currentCondition] || weatherAnimations.Clear;
+  const renderForecastDay = ({ item }) => (
+    <View style={styles.dayCard}>
+      <Text style={styles.dayLabel}>{moment(item.date).format('ddd')}</Text>
+      <LottieView
+        autoPlay
+        loop
+        source={weatherAnimations[item.condition] || weatherAnimations.Clear}
+        style={styles.dayIcon}
+      />
+      <Text style={styles.dayTemp}>
+        {item.avgTemp}°
+      </Text>
+      <Text style={styles.dayCondition}>{item.condition}</Text>
+      <Text style={styles.dayDate}>{moment(item.date).format('D MMM')}</Text>
+    </View>
+  );
+
+  const renderBackgroundSvg = () => {
+    const props = {
+      width: width * 1.2,
+      height: width * 1.2,
+      style: {
+        position: 'absolute',
+        top: -width * 0.2,
+        right: -width * 0.3,
+        opacity: 0.35,
+      },
+    };
+
+    if (currentCondition === 'Clear') {
+      const isNight = currentIcon.includes('n');
+      if (isNight) return <MoonSvg {...props} fill="#FFF" />;
+      return <ClearSvg {...props} fill="#FFF" />;
+    } else if (currentCondition === 'Rain' || currentCondition === 'Drizzle' || currentCondition === 'Thunderstorm') {
+      return <RainSvg {...props} fill="#FFF" />;
+    } else {
+      return <CloudySvg {...props} fill="#FFF" />;
+    }
+  };
 
   return (
-    <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
-      {/* Current Weather Card */}
-      <View style={[styles.card, {width}]}>
-        <View style={styles.cardHeader}>
-          <Icon name="location" size={24} style={styles.icon} />
-          <Text style={styles.sectionTitle}> {weather.name}</Text>
+    <Animated.View
+      style={[
+        styles.heroCard,
+        {
+          opacity: fadeAnim,
+          transform: [{ translateY: floatAnim }],
+        },
+      ]}>
+      {renderBackgroundSvg()}
+      {/* Location */}
+      <View style={styles.locationRow}>
+        <Icon name="location-outline" size={16} color="rgba(255,255,255,0.8)" />
+        <Text style={styles.locationText}>{weather.name}</Text>
+      </View>
+
+      {/* Lottie Animation */}
+      <LottieView
+        source={animationSource}
+        autoPlay
+        loop
+        style={styles.lottie}
+      />
+
+      {/* Temperature */}
+      <Text style={styles.heroTemp}>
+        {Math.round(weather.main.temp)}°
+      </Text>
+      <Text style={styles.unitText}>
+        {unit === 'metric' ? 'Celsius' : 'Fahrenheit'}
+      </Text>
+
+      {/* Condition */}
+      <Text style={styles.conditionText}>{currentCondition}</Text>
+
+      {/* Secondary Info */}
+      <View style={styles.infoRow}>
+        <View style={styles.infoItem}>
+          <Icon name="thermometer-outline" size={16} color="#FFD54F" />
+          <Text style={styles.infoLabel}>Feels</Text>
+          <Text style={styles.infoValue}>
+            {Math.round(weather.main.feels_like)}°
+          </Text>
         </View>
-        <LottieView
-          source={animationSource}
-          autoPlay
-          loop
-          style={styles.lottie}
-        />
-        <Text style={styles.weatherText}></Text>
-        <Text style={styles.weatherText}>
-          Weather Condition:{' '}
-          <Text style={styles.weathertextimp}>{currentCondition}</Text>
-        </Text>
-        <Text style={styles.weatherText}>
-          Temp: <Text style={styles.weathertextimp}>{weather.main.temp}°</Text>{' '}
-          {unit === 'metric' ? 'C' : 'F'}
-        </Text>
-        <View style={styles.cardsliderinfo}>
-          <MaterialIcons
-            name="keyboard-double-arrow-right"
-            size={24}
-            style={styles.icon}
-          />
-          <Text> Slide to see 5 day forecast</Text>
+        <View style={styles.infoDivider} />
+        <View style={styles.infoItem}>
+          <Icon name="water-outline" size={16} color="#81C784" />
+          <Text style={styles.infoLabel}>Humidity</Text>
+          <Text style={styles.infoValue}>{weather.main.humidity}%</Text>
+        </View>
+        <View style={styles.infoDivider} />
+        <View style={styles.infoItem}>
+          <Icon name="speedometer-outline" size={16} color="#64B5F6" />
+          <Text style={styles.infoLabel}>Wind</Text>
+          <Text style={styles.infoValue}>
+            {Math.round(weather.wind.speed)} m/s
+          </Text>
         </View>
       </View>
 
-      {/* Forecast Card */}
-      <View style={[styles.forecastmaincard, {width}]}>
-        <View style={styles.forecastContainer}>
-          <Text style={[styles.sectionTitle, {marginBottom: 5}]}>
-            5-Day Forecast
-          </Text>
-          <View style={styles.forecastGrid}>
-            {dailyForecasts.slice(0, 5).map((item, index) => (
-              <View key={item.date} style={styles.forecastCardFixed}>
-                <View>
-                  <LottieView
-                    autoPlay
-                    source={
-                      weatherAnimations[item.condition] ||
-                      weatherAnimations.Clear
-                    }
-                    style={styles.forecastIcon}
-                  />
-                </View>
-                <View style={{alignItems: 'center'}}>
-                  <Text style={styles.forecastDay}>
-                    {moment(item.date).format('ddd')}
-                  </Text>
-                  <Text style={styles.forecastDate}>
-                    {moment(item.date).format('MMM D')}
-                  </Text>
-                  <Text style={styles.forecastTemp}>
-                    {item.avgTemp}° {unit === 'metric' ? 'C' : 'F'}
-                  </Text>
-                  <Text style={styles.forecastCondition}>{item.condition}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
+      {/* 5-Day Forecast — Horizontal Scroll */}
+      {dailyForecasts.length > 0 && (
+        <View style={styles.forecastSection}>
+          <Text style={styles.forecastTitle}>5-Day Forecast</Text>
+          <FlatList
+            data={dailyForecasts.slice(0, 5)}
+            renderItem={renderForecastDay}
+            keyExtractor={item => item.date}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.forecastList}
+          />
         </View>
-      </View>
-    </ScrollView>
+      )}
+    </Animated.View>
   );
 }
+
 const styles = StyleSheet.create({
-  card: {
-    padding: 16,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    marginBottom: 20,
-    height: width * 0.7,
-    marginRight: 10,
+  heroCard: {
+    ...glass.light,
+    padding: spacing.lg,
+    alignItems: 'center',
+    overflow: 'hidden',
   },
-  forecastmaincard: {
-    padding: 10,
-    backgroundColor: '#fff',
-    paddingRight: 30,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    marginBottom: 20,
-    height: width * 0.7,
-    // height: width * 1,
-  },
-  cardHeader: {
+  locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: spacing.sm,
   },
-  icon: {
-    paddingBottom: 5,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
-  },
-  weatherText: {
-    fontSize: 16,
-    color: '#555',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  weathertextimp: {
-    fontSize: 18,
-    color: '#555',
-    fontWeight: 'bold',
+  locationText: {
+    ...typography.subheading,
+    marginLeft: spacing.xs,
   },
   lottie: {
-    width: width * 0.3,
-    height: width * 0.3,
-    alignSelf: 'center',
+    width: width * 0.28,
+    height: width * 0.28,
   },
-
-  forecastContainer: {
-    marginTop: 16,
+  heroTemp: {
+    ...typography.heroTemp,
+    marginTop: spacing.xs,
   },
-  cardsliderinfo: {
+  unitText: {
+    ...typography.caption,
+    marginTop: -4,
+  },
+  conditionText: {
+    ...typography.heading,
+    fontSize: 20,
+    marginTop: spacing.xs,
+  },
+  infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    marginTop: spacing.md,
+    ...glass.medium,
+    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    width: '100%',
   },
-  forecastCard: {
-    width: width * 0.9,
-    flexDirection: 'column',
-    backgroundColor: '#f0f4f8',
-    borderRadius: 10,
-    padding: 10,
-    marginRight: 10,
+  infoItem: {
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    marginLeft: 10,
+    flex: 1,
   },
-  forecastIcon: {
-    width: width * 0.1,
-    height: width * 0.1,
-    marginBottom: 6,
+  infoLabel: {
+    ...typography.caption,
+    marginTop: 2,
   },
-  forecastDay: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
+  infoValue: {
+    ...typography.subheading,
+    fontSize: 15,
+    fontWeight: '700',
   },
-  forecastDate: {
-    fontSize: 14,
-    color: '#666',
+  infoDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
-  forecastTemp: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#222',
-    marginTop: 4,
+
+  // Forecast section
+  forecastSection: {
+    width: '100%',
+    marginTop: spacing.md,
   },
-  forecastCondition: {
+  forecastTitle: {
+    ...typography.sectionTitle,
+    fontSize: 15,
+    marginBottom: spacing.sm,
+  },
+  forecastList: {
+    gap: spacing.sm,
+  },
+  dayCard: {
+    ...glass.medium,
+    width: 80,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.xs,
+    alignItems: 'center',
+  },
+  dayLabel: {
+    ...typography.subheading,
     fontSize: 13,
-    color: '#555',
+    fontWeight: '700',
+  },
+  dayIcon: {
+    width: 36,
+    height: 36,
+    marginVertical: 4,
+  },
+  dayTemp: {
+    ...typography.subheading,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  dayCondition: {
+    ...typography.caption,
+    fontSize: 9,
     textAlign: 'center',
     marginTop: 2,
   },
-  forecastGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-
-  forecastCardFixed: {
-    width: '29%',
-    flexDirection: 'row',
-    height: width * 0.25,
-    backgroundColor: '#f0f4f8',
-    borderRadius: 10,
-    // padding: 10,
-    marginBottom: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    paddingRight: 10,
+  dayDate: {
+    ...typography.caption,
+    fontSize: 9,
+    marginTop: 2,
   },
 });
