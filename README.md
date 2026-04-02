@@ -1,6 +1,6 @@
 # 🌦 Atmos – News & Weather App
 
-A React Native mobile application that provides real-time weather updates and latest news in one place with multi-language support.
+A modern React Native app that combines real-time weather updates and latest news into a single seamless experience, with support for regional languages like Tamil.
 
 ---
 
@@ -14,27 +14,49 @@ A React Native mobile application that provides real-time weather updates and la
 
 ---
 
+## ⭐ Key Highlights
+
+* Built using React Native CLI with scalable architecture
+* Integrated multiple APIs (weather + news)
+* Supports regional language (Tamil)
+* Designed for real-world usability and performance
+
+---
+
 ## 🛠 Tech Stack
 
 * React Native CLI
-* JavaScript
-* REST APIs
-* AsyncStorage
+* JavaScript (ES6+)
+* REST API Integration
+* AsyncStorage (local storage)
 
 ---
 
 ## 📱 Screenshots
 
-![Home](Assets/screenshots/HomeScreen_Rainy.png)
-![Weather](Assets/screenshots/HomeScreen_cloudy.png)
-![News](Assets/screenshots/NewsScreen.png)
-![Details](Assets/screenshots/SettingsScreen.png)
+<p align="center">
+  <img src="Assets/screenshots/HomeScreen_Rainy.png" width="250"/>
+  <img src="Assets/screenshots/HomeScreen_cloudy.png" width="250"/>
+</p>
+
+<p align="center">
+  <img src="Assets/screenshots/NewsScreen.png" width="250"/>
+  <img src="Assets/screenshots/SettingsScreen.png" width="250"/>
+</p>
 
 ---
-    
+
 ## 📦 Download APK
 
-(Add link here later)
+🚧 APK will be added soon
+
+---
+
+## 🧠 Architecture & Approach
+
+* Modular component structure
+* Separation of UI and business logic
+* Reusable components for scalability
 
 ---
 
