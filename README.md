@@ -81,3 +81,4 @@ Built to provide users a single platform for both weather updates and news consu
 ## 👨‍💻 Author
 
 Abrar Ahmed
+[LinkedIn](https://www.linkedin.com/in/abrar-ahmed-mca/)
