@@ -52,7 +52,7 @@ A modern React Native app that combines real-time weather updates and latest new
 
 ## 📦 Download APK
 
-🚧 APK will be added soon
+[Download APK](https://github.com/Czarabrar/atmos-news-weather-app/releases/tag/v1.0.0)
 
 ---
 
