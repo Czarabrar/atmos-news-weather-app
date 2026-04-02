@@ -46,7 +46,7 @@ A modern React Native app that combines real-time weather updates and latest new
 
 <p align="center">
   <img src="Assets/screenshots/News_Tamil.png" width="250"/>
-  <img src="Assets/screenshots/NewsCards.png.png" width="250"/>
+  <img src="Assets/screenshots/NewsCards.png" width="250"/>
 </p>
 ---
 
